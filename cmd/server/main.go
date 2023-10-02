@@ -79,7 +79,7 @@ func getConfig(path string) (*config, error) {
 	return cf, nil
 }
 func getLogOutput(path string) io.Writer {
-	if err := os.Mkdir("logs", os.ModePerm); err != nil {
+	if err := os.MkdirAll("logs", os.ModePerm); err != nil {
 		return os.Stdout
 	}
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

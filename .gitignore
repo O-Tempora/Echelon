@@ -22,7 +22,7 @@
 go.work
 
 #binary
-server
+app
 
 #Log files
 logs

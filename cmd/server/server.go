@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 
 	netvuln "github.com/O-Tempora/Echelon/internal/api/netvuln_v1"
 	"github.com/Ullaakut/nmap/v3"
 	"golang.org/x/exp/slog"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -34,9 +37,17 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 	s.logger.InfoContext(ctx, "Command executed",
 		slog.Any("Args: ", scanner.Args()),
 	)
-	res, _, err := scanner.Run()
+	res, warns, err := scanner.Run()
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to run nmap command", "Reason: ", err.Error())
+		s.logger.ErrorContext(ctx, "Failed to run nmap command", "reason: ", err.Error())
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+	if warns != nil && len(*warns) > 0 {
+		s.logger.WarnContext(ctx, "On calling nmap run", slog.Any("warnings:", *warns))
+	}
+	if len(res.Hosts) == 0 {
+		err = status.Error(codes.InvalidArgument, "No such hosts")
+		s.logger.ErrorContext(ctx, "Nmap error", "reason: ", err.Error())
 		return nil, err
 	}
 
@@ -88,7 +99,7 @@ func getVulnData(table *nmap.Table) *netvuln.Vulnerability {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			vuln.CvssScore = float32(cvss)
+			vuln.CvssScore = float32(math.Floor(cvss*10) / 10)
 		default:
 			continue
 		}

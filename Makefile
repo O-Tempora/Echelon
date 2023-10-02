@@ -1,10 +1,10 @@
 .PHONY: build
 build: 
-	go build -o server cmd/server/*.go
+	go build -o app cmd/server/*.go
 
 .PHONY: run
 run: build
-	./server
+	./app
 
 .PHONY: gen
 gen: 
@@ -21,5 +21,9 @@ rmlog:
 lint: 
 	go fmt ./... && \
 	go vet -json ./...
+
+.PHONY: test
+test:
+	go test -v cmd/server/*.go
 
 .DEFAULT_GOAL=lint
