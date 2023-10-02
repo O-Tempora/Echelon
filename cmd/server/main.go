@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 
-	service "github.com/O-Tempora/Echelon/internal/api/netvuln_v1"
+	netvuln "github.com/O-Tempora/Echelon/internal/api/netvuln_v1"
 	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -45,17 +45,17 @@ func main() {
 	s := grpc.NewServer()
 	reflection.Register(s)
 
-	//Seting up logger
-	lev := new(slog.LevelVar)
-	setLogLevel(lev, cf.LogLevel)
+	//Setting up logger
+	level := new(slog.LevelVar)
+	setLogLevel(level, cf.LogLevel)
 	serv := &server{
 		logger: slog.New(slog.NewJSONHandler(getLogOutput(cf.LogPath), &slog.HandlerOptions{
-			Level: lev,
+			Level: level,
 		})),
 	}
 
 	//Starting server
-	service.RegisterNetVulnServiceServer(s, serv)
+	netvuln.RegisterNetVulnServiceServer(s, serv)
 
 	serv.logger.Info("Server started: ",
 		slog.Int("port", cf.Port),
@@ -79,6 +79,9 @@ func getConfig(path string) (*config, error) {
 	return cf, nil
 }
 func getLogOutput(path string) io.Writer {
+	if err := os.Mkdir("logs", os.ModePerm); err != nil {
+		return os.Stdout
+	}
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return os.Stdout

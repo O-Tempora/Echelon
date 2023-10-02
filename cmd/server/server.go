@@ -31,9 +31,12 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 		return nil, err
 	}
 
-	s.logger.Info("Command: ", scanner.Args())
+	s.logger.InfoContext(ctx, "Command executed",
+		slog.Any("Args: ", scanner.Args()),
+	)
 	res, _, err := scanner.Run()
 	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to run nmap command", "Reason: ", err.Error())
 		return nil, err
 	}
 
@@ -66,6 +69,7 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 		resp.Results = append(resp.Results, targetResult)
 	}
 
+	s.logger.InfoContext(ctx, "Successfull nmap call")
 	return resp, nil
 }
 

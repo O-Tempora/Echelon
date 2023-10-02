@@ -25,4 +25,4 @@ go.work
 server
 
 #Log files
-logs/*.log
+logs
