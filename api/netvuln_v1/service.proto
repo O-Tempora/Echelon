@@ -22,7 +22,8 @@ message TargetResult {
 }
 
 message Service {
-    string name = 1; string version = 2;
+    string name = 1; 
+    string version = 2;
     int32 tcp_port = 3; 
     repeated Vulnerability vulns = 4;
 }

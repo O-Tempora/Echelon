@@ -25,11 +25,6 @@ type config struct {
 	LogPath  string `yaml:"logpath"`
 }
 
-type server struct {
-	service.UnimplementedNetVulnServiceServer
-	logger *slog.Logger
-}
-
 func init() {
 	flag.StringVar(&serviceConfig, "config", "config/default.yaml", "path to config file")
 }
