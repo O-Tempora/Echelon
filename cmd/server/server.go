@@ -20,6 +20,8 @@ type server struct {
 }
 
 func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*netvuln.CheckVulnResponse, error) {
+
+	//Setting up scanner
 	scanner, err := nmap.NewScanner(
 		ctx,
 		nmap.WithPorts(fmt.Sprintf("%d", r.GetTcpPort())),
@@ -37,6 +39,8 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 	s.logger.InfoContext(ctx, "Command executed",
 		slog.Any("Args: ", scanner.Args()),
 	)
+
+	//Run scanner and check hosts and warnings
 	res, warns, err := scanner.Run()
 	if err != nil {
 		s.logger.ErrorContext(ctx, "Failed to run nmap command", "reason: ", err.Error())
@@ -51,6 +55,7 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 		return nil, err
 	}
 
+	//Processing results
 	resp := &netvuln.CheckVulnResponse{
 		Results: make([]*netvuln.TargetResult, 0),
 	}
@@ -84,6 +89,7 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 	return resp, nil
 }
 
+// Get vulnerability data from nmap.Run tables
 func getVulnData(table *nmap.Table) *netvuln.Vulnerability {
 	if table == nil || len(table.Elements) == 0 {
 		return nil

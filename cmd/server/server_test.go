@@ -5,10 +5,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"reflect"
 	"testing"
 
 	netvuln "github.com/O-Tempora/Echelon/internal/api/netvuln_v1"
-	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -103,7 +103,7 @@ func TestServer_CheckVuln(t *testing.T) {
 				response: &netvuln.CheckVulnResponse{
 					Results: []*netvuln.TargetResult{
 						{
-							Target: "45.33.32.156",
+							Target: "45.33.32.156", //scanme.nmap.org
 							Services: &netvuln.Service{
 								Vulns:   []*netvuln.Vulnerability{},
 								Name:    "https",
@@ -126,9 +126,7 @@ func TestServer_CheckVuln(t *testing.T) {
 					t.Errorf("Err -> \nExpected: %q\nGot: %q\n", table.expectation.err, err)
 				}
 			} else {
-				if table.expectation.response.Results == nil ||
-					resp.Results == nil ||
-					!slices.Equal[[]*netvuln.TargetResult, *netvuln.TargetResult](table.expectation.response.Results, resp.Results) {
+				if reflect.DeepEqual(table.expectation.response.Results, resp.Results) {
 					t.Errorf("Results -> \nExpected: %v\nGot: %v\n", table.expectation.response.Results, resp.Results)
 				}
 			}

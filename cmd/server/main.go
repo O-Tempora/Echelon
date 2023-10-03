@@ -66,6 +66,7 @@ func main() {
 	}
 }
 
+// Get and unmarshall config from yaml file
 func getConfig(path string) (*config, error) {
 	configBytes, err := os.ReadFile(serviceConfig)
 	if err != nil {
@@ -78,6 +79,8 @@ func getConfig(path string) (*config, error) {
 	}
 	return cf, nil
 }
+
+// Get log output (stdout or stdout + file)
 func getLogOutput(path string) io.Writer {
 	if err := os.MkdirAll("logs", os.ModePerm); err != nil {
 		return os.Stdout
@@ -88,6 +91,8 @@ func getLogOutput(path string) io.Writer {
 	}
 	return io.MultiWriter(os.Stdout, file)
 }
+
+// Set logger log level from config
 func setLogLevel(lev *slog.LevelVar, cfLevel string) {
 	switch cfLevel {
 	case "INFO":
