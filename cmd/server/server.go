@@ -59,34 +59,50 @@ func (s *server) CheckVuln(ctx context.Context, r *netvuln.CheckVulnRequest) (*n
 	resp := &netvuln.CheckVulnResponse{
 		Results: make([]*netvuln.TargetResult, 0),
 	}
-	for _, host := range res.Hosts {
-		targetResult := &netvuln.TargetResult{
-			Target: host.Addresses[0].Addr,
-		}
-		port := host.Ports[0]
-		service := &netvuln.Service{
-			TcpPort: int32(port.ID),
-			Version: port.Service.Version,
-			Name:    port.Service.Name,
-			Vulns:   make([]*netvuln.Vulnerability, 0),
-		}
-		for _, scr := range port.Scripts {
-			if scr.Tables != nil && len(scr.Tables) > 0 {
-				for _, table := range scr.Tables {
-					if table.Tables != nil && len(table.Tables) > 0 {
-						for _, tb := range table.Tables {
-							service.Vulns = append(service.Vulns, getVulnData(&tb))
+	done := make(chan struct{})
+	for v := range getResultData(res.Hosts, done) {
+		resp.Results = append(resp.Results, v)
+	}
+
+	s.logger.InfoContext(ctx, "Successfull call", slog.Int("Hosts scanned:", len(resp.GetResults())))
+	return resp, nil
+}
+
+// Result generator function
+func getResultData(hosts []nmap.Host, done <-chan struct{}) <-chan *netvuln.TargetResult {
+	res := make(chan *netvuln.TargetResult)
+	go func() {
+		defer close(res)
+		for _, host := range hosts {
+			targetResult := &netvuln.TargetResult{
+				Target: host.Addresses[0].Addr,
+			}
+			port := host.Ports[0]
+			targetResult.Services = &netvuln.Service{
+				TcpPort: int32(port.ID),
+				Version: port.Service.Version,
+				Name:    port.Service.Name,
+				Vulns:   make([]*netvuln.Vulnerability, 0),
+			}
+			for _, scr := range port.Scripts {
+				if scr.Tables != nil && len(scr.Tables) > 0 {
+					for _, table := range scr.Tables {
+						if table.Tables != nil && len(table.Tables) > 0 {
+							for _, tb := range table.Tables {
+								targetResult.Services.Vulns = append(targetResult.Services.Vulns, getVulnData(&tb))
+							}
 						}
 					}
 				}
 			}
+			select {
+			case <-done:
+				return
+			case res <- targetResult:
+			}
 		}
-		targetResult.Services = service
-		resp.Results = append(resp.Results, targetResult)
-	}
-
-	s.logger.InfoContext(ctx, "Successfull nmap call")
-	return resp, nil
+	}()
+	return res
 }
 
 // Get vulnerability data from nmap.Run tables
